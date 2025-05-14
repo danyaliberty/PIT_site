@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал оценок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .tabs {
+            display: flex;
+            background-color: #f1f1f1;
+            padding: 0;
+            margin: 0;
+        }
+        .tab {
+            padding: 14px 20px;
+            cursor: pointer;
+            list-style-type: none;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            background-color: #e0e0e0;
+        }
+        .tab.active {
+            background-color: #fff;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, button, select {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        .social-btn {
+            background-color: #4a76a8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .social-btn:hover {
+            background-color: #3a5f8a;
+        }
+        .colortextdlyarazraba{
+        color:purple;
+        font-size: 28px;
+    }
+    </style>
+</head>
+<body>
+    <ul class="tabs">
+        <li class="tab active" data-tab="upload">Загрузка оценок</li>
+        <li class="tab" data-tab="journal">Журнал</li>
+        <li class="tab" data-tab="stats-table">Статистика (таблица)</li>
+        <li class="tab" data-tab="stats-graph">Статистика (графики)</li>
+        <li class="tab" data-tab="help">Помощь</li>
+        <li class="tab" data-tab="about">О программе</li>
+    </ul>
+
+    <div id="upload" class="tab-content active">
+        <h2>Загрузка оценок из файла</h2>
+        <input type="file" id="fileInput" accept=".csv,.txt,.xlsx">
+        <button id="loadBtn">Загрузить файл</button>
+        <div id="filePreview">
+            <h3>Предпросмотр данных:</h3>
+            <table id="previewTable">
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Класс</th>
+                        <th>Предмет</th>
+                        <th>Оценка</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="journal" class="tab-content">
+        <h2>Журнал оценок</h2>
+        <div class="form-group">
+            <input type="text" id="studentName" placeholder="ФИО ученика">
+            <input type="text" id="studentClass" placeholder="Класс">
+            <input type="text" id="studentSubject" placeholder="Предмет">
+            <input type="number" id="studentGrade" placeholder="Оценка" min="1" max="5">
+            <button id="addBtn">Добавить</button>
+            <button id="updateBtn" disabled>Изменить</button>
+            <button id="deleteBtn" disabled>Удалить</button>
+        </div>
+        <table id="journalTable">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Класс</th>
+                    <th>Предмет</th>
+                    <th>Оценка</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="form-group">
+            <label for="saveFormat">Формат сохранения:</label>
+            <select id="saveFormat">
+                <option value="csv">CSV</option>
+                <option value="txt">TXT</option>
+                <option value="xlsx">XLSX</option>
+            </select>
+            <button id="saveBtn">Сохранить журнал</button>
+        </div>
+    </div>
+
+    <div id="stats-table" class="tab-content">
+        <h2>Статистика в табличном виде</h2>
+        <div id="classStats">
+            <h3>Статистика по классам</h3>
+            <table id="classStatsTable">
+                <thead>
+                    <tr>
+                        <th>Класс</th>
+                        <th>Предмет</th>
+                        <th>Средняя</th>
+                        <th>Медиана</th>
+                        <th>Кол-во 5</th>
+                        <th>% 5</th>
+                        <th>Кол-во 4</th>
+                        <th>% 4</th>
+                        <th>Кол-во 3</th>
+                        <th>% 3</th>
+                        <th>Кол-во 2</th>
+                        <th>% 2</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="subjectStats">
+            <h3>Статистика по предметам (все классы)</h3>
+            <table id="subjectStatsTable">
+                <thead>
+                    <tr>
+                        <th>Предмет</th>
+                        <th>Средняя</th>
+                        <th>Медиана</th>
+                        <th>Кол-во 5</th>
+                        <th>% 5</th>
+                        <th>Кол-во 4</th>
+                        <th>% 4</th>
+                        <th>Кол-во 3</th>
+                        <th>% 3</th>
+                        <th>Кол-во 2</th>
+                        <th>% 2</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="stats-graph" class="tab-content">
+        <h2>Статистика в графическом виде</h2>
+        <div>
+            <label for="graphType">Тип графика:</label>
+            <select id="graphType">
+                <option value="classAvg">Средняя оценка по классам</option>
+                <option value="subjectAvg">Средняя оценка по предметам</option>
+            </select>
+            <button id="drawGraphBtn">Построить график</button>
+        </div>
+        <canvas id="statsChart" width="800" height="400"></canvas>
+    </div>
+
+    <div id="help" class="tab-content">
+        <h2>Помощь</h2>
+        <h3>Загрузка оценок</h3>
+        <p>На этой вкладке вы можете загрузить оценки из файла формата CSV, TXT или XLSX. Файл должен содержать столбцы с ФИО ученика, классом и оценками по предметам.</p>
+        
+        <h3>Журнал</h3>
+        <p>На этой вкладке вы можете добавлять, изменять и удалять записи об оценках учащихся. Для редактирования выберите запись в таблице, внесите изменения в поля ввода и нажмите "Изменить".</p>
+        
+        <h3>Статистика (таблица)</h3>
+        <p>На этой вкладке отображается статистическая информация по классам и предметам, включая средние значения, медианы и распределение оценок.</p>
+        
+        <h3>Статистика (графики)</h3>
+        <p>На этой вкладке вы можете визуализировать статистические данные в виде графиков. Выберите тип графика и нажмите "Построить график".</p>
+    </div>
+
+    <div id="about" class="tab-content">
+        <h2>О программе</h2>
+        <p>Журнал оценок - веб-приложение для учета и анализа успеваемости учащихся.</p>
+        <p>Разработчик: Апухтин Даниил Александрович</p>
+        <p>Контактные данные: danilka@yandex.ru </p>
+        <p><span class="colortextdlyarazraba">Фото разработчика </span> </p>
+        <img src="photo.jpg" width="200" height="200" alt="Фото разработчика">
+        <div>
+            <a href="https://vk.com/dan2il" class="social-btn" target="_blank">Для связи</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Хранение данных
+        let grades = [];
+        let selectedRow = null;
+
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            loadFromLocalStorage();
+            
+           
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                    
+                    
+                    if (this.dataset.tab === 'stats-table' || this.dataset.tab === 'stats-graph') {
+                        updateStatistics();
+                    }
+                });
+            });
+
+         
+            document.getElementById('addBtn').addEventListener('click', addGrade);
+            document.getElementById('updateBtn').addEventListener('click', updateGrade);
+            document.getElementById('deleteBtn').addEventListener('click', deleteGrade);
+            document.getElementById('saveBtn').addEventListener('click', saveJournal);
+            document.getElementById('loadBtn').addEventListener('click', loadFile);
+            document.getElementById('drawGraphBtn').addEventListener('click', drawChart);
+
+            
+            updateJournalTable();
+        });
+
+        
+        function addGrade() {
+            const name = document.getElementById('studentName').value.trim();
+            const studentClass = document.getElementById('studentClass').value.trim();
+            const subject = document.getElementById('studentSubject').value.trim();
+            const grade = parseInt(document.getElementById('studentGrade').value);
+            
+            if (name && studentClass && subject && grade >= 1 && grade <= 5) {
+                grades.push({
+                    id: Date.now(),
+                    name,
+                    class: studentClass,
+                    subject,
+                    grade
+                });
+                
+                clearForm();
+                updateJournalTable();
+                saveToLocalStorage();
+            } else {
+                alert('Пожалуйста, заполните все поля корректно!');
+            }
+        }
+
+        function updateGrade() {
+            if (selectedRow) {
+                const name = document.getElementById('studentName').value.trim();
+                const studentClass = document.getElementById('studentClass').value.trim();
+                const subject = document.getElementById('studentSubject').value.trim();
+                const grade = parseInt(document.getElementById('studentGrade').value);
+                
+                if (name && studentClass && subject && grade >= 1 && grade <= 5) {
+                    const index = grades.findIndex(g => g.id === selectedRow.id);
+                    if (index !== -1) {
+                        grades[index] = {
+                            id: selectedRow.id,
+                            name,
+                            class: studentClass,
+                            subject,
+                            grade
+                        };
+                        
+                        clearForm();
+                        updateJournalTable();
+                        saveToLocalStorage();
+                        
+                        document.getElementById('updateBtn').disabled = true;
+                        document.getElementById('deleteBtn').disabled = true;
+                        selectedRow = null;
+                    }
+                } else {
+                    alert('Пожалуйста, заполните все поля корректно!');
+                }
+            }
+        }
+
+        function deleteGrade() {
+            if (selectedRow) {
+                if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+                    grades = grades.filter(g => g.id !== selectedRow.id);
+                    
+                    clearForm();
+                    updateJournalTable();
+                    saveToLocalStorage();
+                    
+                    document.getElementById('updateBtn').disabled = true;
+                    document.getElementById('deleteBtn').disabled = true;
+                    selectedRow = null;
+                }
+            }
+        }
+
+        function selectGrade(grade) {
+            selectedRow = grade;
+            document.getElementById('studentName').value = grade.name;
+            document.getElementById('studentClass').value = grade.class;
+            document.getElementById('studentSubject').value = grade.subject;
+            document.getElementById('studentGrade').value = grade.grade;
+            
+            document.getElementById('updateBtn').disabled = false;
+            document.getElementById('deleteBtn').disabled = false;
+        }
+
+        function clearForm() {
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentClass').value = '';
+            document.getElementById('studentSubject').value = '';
+            document.getElementById('studentGrade').value = '';
+        }
+
+        
+        function updateJournalTable() {
+            const tbody = document.querySelector('#journalTable tbody');
+            tbody.innerHTML = '';
+            
+            grades.forEach(grade => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${grade.name}</td>
+                    <td>${grade.class}</td>
+                    <td>${grade.subject}</td>
+                    <td>${grade.grade}</td>
+                    <td><button class="selectBtn" data-id="${grade.id}">Выбрать</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            
+            document.querySelectorAll('.selectBtn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const grade = grades.find(g => g.id === parseInt(this.dataset.id));
+                    if (grade) selectGrade(grade);
+                });
+            });
+        }
+
+        function updateStatistics() {
+            updateClassStatistics();
+            updateSubjectStatistics();
+        }
+
+        function updateClassStatistics() {
+            const tbody = document.querySelector('#classStatsTable tbody');
+            tbody.innerHTML = '';
+            
+            // Группировка по классам и предметам
+            const classStats = {};
+            
+            grades.forEach(grade => {
+                const key = `${grade.class}_${grade.subject}`;
+                if (!classStats[key]) {
+                    classStats[key] = {
+                        class: grade.class,
+                        subject: grade.subject,
+                        grades: []
+                    };
+                }
+                classStats[key].grades.push(grade.grade);
+            });
+            
+            
+            for (const key in classStats) {
+                const stat = classStats[key];
+                const grades = stat.grades;
+                const count = grades.length;
+                const avg = (grades.reduce((a, b) => a + b, 0) / count).toFixed(2);
+                const median = calculateMedian(grades);
+                
+                const count5 = grades.filter(g => g === 5).length;
+                const count4 = grades.filter(g => g === 4).length;
+                const count3 = grades.filter(g => g === 3).length;
+                const count2 = grades.filter(g => g === 2).length;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.class}</td>
+                    <td>${stat.subject}</td>
+                    <td>${avg}</td>
+                    <td>${median}</td>
+                    <td>${count5}</td>
+                    <td>${((count5 / count) * 100).toFixed(1)}%</td>
+                    <td>${count4}</td>
+                    <td>${((count4 / count) * 100).toFixed(1)}%</td>
+                    <td>${count3}</td>
+                    <td>${((count3 / count) * 100).toFixed(1)}%</td>
+                    <td>${count2}</td>
+                    <td>${((count2 / count) * 100).toFixed(1)}%</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function updateSubjectStatistics() {
+            const tbody = document.querySelector('#subjectStatsTable tbody');
+            tbody.innerHTML = '';
+            
+           
+            const subjectStats = {};
+            
+            grades.forEach(grade => {
+                if (!subjectStats[grade.subject]) {
+                    subjectStats[grade.subject] = {
+                        subject: grade.subject,
+                        grades: []
+                    };
+                }
+                subjectStats[grade.subject].grades.push(grade.grade);
+            });
+            
+           
+            for (const subject in subjectStats) {
+                const stat = subjectStats[subject];
+                const grades = stat.grades;
+                const count = grades.length;
+                const avg = (grades.reduce((a, b) => a + b, 0) / count).toFixed(2);
+                const median = calculateMedian(grades);
+                
+                const count5 = grades.filter(g => g === 5).length;
+                const count4 = grades.filter(g => g === 4).length;
+                const count3 = grades.filter(g => g === 3).length;
+                const count2 = grades.filter(g => g === 2).length;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.subject}</td>
+                    <td>${avg}</td>
+                    <td>${median}</td>
+                    <td>${count5}</td>
+                    <td>${((count5 / count) * 100).toFixed(1)}%</td>
+                    <td>${count4}</td>
+                    <td>${((count4 / count) * 100).toFixed(1)}%</td>
+                    <td>${count3}</td>
+                    <td>${((count3 / count) * 100).toFixed(1)}%</td>
+                    <td>${count2}</td>
+                    <td>${((count2 / count) * 100).toFixed(1)}%</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function calculateMedian(numbers) {
+            const sorted = [...numbers].sort((a, b) => a - b);
+            const middle = Math.floor(sorted.length / 2);
+            
+            if (sorted.length % 2 === 0) {
+                return ((sorted[middle - 1] + sorted[middle]) / 2).toFixed(1);
+            } else {
+                return sorted[middle].toFixed(1);
+            }
+        }
+
+        
+        function drawChart() {
+            const canvas = document.getElementById('statsChart');
+            const ctx = canvas.getContext('2d');
+            const graphType = document.getElementById('graphType').value;
+            
+           
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+            
+            if (graphType === 'classAvg') {
+                drawClassAverageChart(ctx);
+            } else if (graphType === 'subjectAvg') {
+                drawSubjectAverageChart(ctx);
+            }
+        }
+
+        function drawClassAverageChart(ctx) {
+            
+            const classStats = {};
+            
+            grades.forEach(grade => {
+                const key = `${grade.class}_${grade.subject}`;
+                if (!classStats[key]) {
+                    classStats[key] = {
+                        class: grade.class,
+                        subject: grade.subject,
+                        grades: []
+                    };
+                }
+                classStats[key].grades.push(grade.grade);
+            });
+            
+            
+            const datasets = {};
+            
+            for (const key in classStats) {
+                const stat = classStats[key];
+                const avg = stat.grades.reduce((a, b) => a + b, 0) / stat.grades.length;
+                
+                if (!datasets[stat.subject]) {
+                    datasets[stat.subject] = {
+                        label: stat.subject,
+                        data: [],
+                        backgroundColor: getRandomColor()
+                    };
+                }
+                
+                // Находим индекс класса или добавляем новый
+                let classIndex = datasets[stat.subject].data.findIndex(item => item.x === stat.class);
+                if (classIndex === -1) {
+                    datasets[stat.subject].data.push({
+                        x: stat.class,
+                        y: avg
+                    });
+                } else {
+                    datasets[stat.subject].data[classIndex].y = avg;
+                }
+            }
+            
+            
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    datasets: Object.values(datasets)
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Класс'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Средняя оценка'
+                            },
+                            min: 0,
+                            max: 5
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Средние оценки по классам и предметам'
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawSubjectAverageChart(ctx) {
+            
+            const subjectStats = {};
+            
+            grades.forEach(grade => {
+                if (!subjectStats[grade.subject]) {
+                    subjectStats[grade.subject] = {
+                        grades: []
+                    };
+                }
+                subjectStats[grade.subject].grades.push(grade.grade);
+            });
+            
+            
+            const labels = Object.keys(subjectStats);
+            const data = labels.map(subject => {
+                const grades = subjectStats[subject].grades;
+                return grades.reduce((a, b) => a + b, 0) / grades.length;
+            });
+            
+            
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Средняя оценка',
+                        data: data,
+                        backgroundColor: labels.map(() => getRandomColor())
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            title: {
+                                display: true,
+                                text: 'Средняя оценка'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Предмет'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Средние оценки по предметам'
+                        }
+                    }
+                }
+            });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        
+       function loadFile() {
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Пожалуйста, выберите файл!');
+        return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        let content = e.target.result;
+        
+        
+        if (typeof content === 'string' && content.includes('�')) {
+            
+            const decoder = new TextDecoder('windows-1251');
+            content = decoder.decode(new Uint8Array(e.target.result));
+        }
+        
+        if (file.name.endsWith('.xlsx')) {
+            parseExcelFile(e.target.result);
+        } else {
+            parseTextFile(content, file.name);
+        }
+    };
+    
+    if (file.name.endsWith('.xlsx')) {
+        reader.readAsArrayBuffer(file);
+    } else {
+        
+        reader.readAsText(file, 'windows-1251');
+    }
+}
+
+        function parseExcelFile(content) {
+            try {
+                const workbook = XLSX.read(content, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                if (jsonData.length < 2) {
+                    alert('Файл Excel не содержит данных или имеет неправильный формат');
+                    return;
+                }
+                
+                
+                grades = [];
+                const previewTbody = document.querySelector('#previewTable tbody');
+                previewTbody.innerHTML = '';
+                
+               
+                const headers = jsonData[0].map(h => h ? h.toString().trim() : '');
+                if (headers.length < 3) {
+                    alert('Неверный формат файла. Ожидается минимум 3 столбца: ФИО, Класс и хотя бы один предмет.');
+                    return;
+                }
+                
+                
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (row && row.length >= 3) {
+                        const name = row[0] ? row[0].toString().trim() : '';
+                        const studentClass = row[1] ? row[1].toString().trim() : '';
+                        
+                        // Для каждого предмета создаем отдельную запись
+                        for (let j = 2; j < Math.min(row.length, headers.length); j++) {
+                            const subject = headers[j];
+                            const gradeValue = row[j];
+                            const grade = gradeValue ? parseInt(gradeValue.toString()) : NaN;
+                            
+                            if (name && studentClass && subject && !isNaN(grade)) {
+                                grades.push({
+                                    id: Date.now() + i * 100 + j, // Уникальный ID
+                                    name,
+                                    class: studentClass,
+                                    subject,
+                                    grade
+                                });
+                                
+                               
+                                const previewRow = document.createElement('tr');
+                                previewRow.innerHTML = `
+                                    <td>${name}</td>
+                                    <td>${studentClass}</td>
+                                    <td>${subject}</td>
+                                    <td>${grade}</td>
+                                `;
+                                previewTbody.appendChild(previewRow);
+                            }
+                        }
+                    }
+                }
+                
+                if (grades.length > 0) {
+                    alert(`Успешно загружено ${grades.length} записей из файла Excel`);
+                    saveToLocalStorage();
+                    updateJournalTable();
+                } else {
+                    alert('Не удалось загрузить данные из файла Excel. Проверьте формат файла.');
+                }
+            } catch (e) {
+                alert('Ошибка при чтении файла Excel: ' + e.message);
+            }
+        }
+
+        function parseTextFile(content, fileName) {
+            const lines = content.split('\n');
+            const previewTbody = document.querySelector('#previewTable tbody');
+            previewTbody.innerHTML = '';
+            
+           
+            grades = [];
+            
+            
+            const headers = lines[0].split(';').map(h => h.trim());
+            if (headers.length < 3) {
+                alert('Неверный формат файла. Ожидается минимум 3 столбца: ФИО, Класс и хотя бы один предмет.');
+                return;
+            }
+            
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const cells = line.split(';').map(c => c.trim());
+                    if (cells.length >= 3) {
+                        const name = cells[0];
+                        const studentClass = cells[1];
+                        
+                        
+                        for (let j = 2; j < Math.min(cells.length, headers.length); j++) {
+                            const subject = headers[j];
+                            const grade = parseInt(cells[j]);
+                            
+                            if (name && studentClass && subject && !isNaN(grade)) {
+                                grades.push({
+                                    id: Date.now() + i * 100 + j, // Уникальный ID
+                                    name,
+                                    class: studentClass,
+                                    subject,
+                                    grade
+                                });
+                                
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${name}</td>
+                                    <td>${studentClass}</td>
+                                    <td>${subject}</td>
+                                    <td>${grade}</td>
+                                `;
+                                previewTbody.appendChild(row);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (grades.length > 0) {
+                alert(`Успешно загружено ${grades.length} записей из файла ${fileName}`);
+                saveToLocalStorage();
+                updateJournalTable();
+            } else {
+                alert('Не удалось загрузить данные из файла. Проверьте формат файла.');
+            }
+        }
+
+        function saveJournal() {
+            const format = document.getElementById('saveFormat').value;
+            
+            if (format === 'xlsx') {
+                saveAsExcel();
+            } else {
+                saveAsText(format);
+            }
+        }
+
+        function saveAsExcel() {
+            try {
+                
+                const wb = XLSX.utils.book_new();
+                
+                // Создаем массив данных
+                const data = [
+                    ['ФИО', 'Класс', 'Предмет', 'Оценка'],
+                    ...grades.map(grade => [grade.name, grade.class, grade.subject, grade.grade])
+                ];
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, "Журнал оценок");
+                
+                
+                XLSX.writeFile(wb, 'журнал_оценок.xlsx');
+            } catch (e) {
+                alert('Ошибка при сохранении в Excel: ' + e.message);
+            }
+        }
+
+        function saveAsText(format) {
+            
+            const delimiter = format === 'csv' ? ';' : '\t';
+            
+            
+            let content = `ФИО${delimiter}Класс${delimiter}Предмет${delimiter}Оценка\n`;
+            
+            grades.forEach(grade => {
+                content += `${grade.name}${delimiter}${grade.class}${delimiter}${grade.subject}${delimiter}${grade.grade}\n`;
+            });
+            
+            
+            const mimeType = format === 'csv' ? 'text/csv' : 'text/plain';
+            const extension = format === 'csv' ? 'csv' : 'txt';
+            
+            
+            const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `журнал_оценок.${extension}`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        
+        function saveToLocalStorage() {
+            localStorage.setItem('gradeJournal', JSON.stringify(grades));
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('gradeJournal');
+            if (savedData) {
+                grades = JSON.parse(savedData);
+                updateJournalTable();
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
